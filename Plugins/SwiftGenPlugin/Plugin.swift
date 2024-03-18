@@ -23,7 +23,7 @@ struct SwiftGenPlugin: BuildToolPlugin {
     }
 
     // Clear the SwiftGen plugin's directory (in case of dangling files)
-    fileManager.forceClean(directory: context.pluginWorkDirectory)
+//    fileManager.forceClean(directory: context.pluginWorkDirectory)
 
     return try configurations.map { configuration in
       try .swiftgen(using: configuration, context: context, target: target)
