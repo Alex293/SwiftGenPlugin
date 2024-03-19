@@ -23,7 +23,7 @@ struct SwiftGenPlugin: BuildToolPlugin {
     }
 
     // Clear the SwiftGen plugin's directory (in case of dangling files)
-//    fileManager.forceClean(directory: context.pluginWorkDirectory)
+//    try fileManager.forceClean(directory: context.pluginWorkDirectory)
 
     return try configurations.map { configuration in
       try .swiftgen(using: configuration, context: context, target: target)
@@ -63,7 +63,7 @@ private extension Command {
       environment: [
         "PROJECT_DIR": context.package.directory,
         "TARGET_NAME": target.name,
-        "PRODUCT_MODULE_NAME": target.moduleName,
+        "PRODUCT_MODULE_NAME": try target.moduleName,
         "DERIVED_SOURCES_DIR": context.pluginWorkDirectory
       ],
       outputFilesDirectory: context.pluginWorkDirectory
@@ -73,9 +73,10 @@ private extension Command {
 
 private extension FileManager {
   /// Re-create the given directory
-  func forceClean(directory: Path) {
-    try? removeItem(atPath: directory.string)
-    try? createDirectory(atPath: directory.string, withIntermediateDirectories: false)
+  func forceClean(directory: Path) throws {
+      for path in try contentsOfDirectory(atPath: directory.string) {
+          try? removeItem(atPath: path)
+      }
   }
 }
 
@@ -83,11 +84,13 @@ extension Target {
   /// Try to access the underlying `moduleName` property
   /// Falls back to target's name
   var moduleName: String {
-    switch self {
-    case let target as SourceModuleTarget:
-      return target.moduleName
-    default:
-      return ""
-    }
+      get throws {
+          switch self {
+          case let target as SourceModuleTarget:
+              return target.moduleName
+          default:
+              throw NSError(domain: "SwiftGenPlugin", code: 1)
+          }
+      }
   }
 }
